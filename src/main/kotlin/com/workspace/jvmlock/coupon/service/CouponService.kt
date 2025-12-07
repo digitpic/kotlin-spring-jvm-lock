@@ -8,9 +8,20 @@ import org.springframework.stereotype.Service
 class CouponService(
     private val repository: CouponRepository,
 ) {
+    private val lock = Any()
+
     fun issue(userId: Long) {
         val coupon = Coupon(userId)
-        repository.create(coupon)
+        synchronized(lock) {
+            if (repository.findAll().size >= MAX_COUPON_COUNT) {
+                throw IllegalStateException("쿠폰이 모두 소진되었습니다.")
+            }
+            repository.create(coupon)
+        }
+    }
+
+    companion object {
+        private const val MAX_COUPON_COUNT = 100
     }
 }
 
